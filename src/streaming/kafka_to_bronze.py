@@ -4,10 +4,6 @@ import os
 # Windows local Spark configuration
 # ============================================================
 
-os.environ["HADOOP_HOME"] = r"C:\hadoop"
-os.environ["hadoop.home.dir"] = r"C:\hadoop"
-os.environ["HADOOP_OPTS"] = "-Djava.library.path="
-
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp
 from config.settings import (
