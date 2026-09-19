@@ -1,0 +1,53 @@
+services:
+
+  bronze-streaming:
+    image: retailhub-spark-streaming:4.2.0
+    container_name: retailhub-bronze-streaming
+    restart: unless-stopped
+
+    networks:
+      - kafka_default
+
+    env_file:
+      - ../../.env
+
+    environment:
+      KAFKA_BROKER: kafka:29092
+      BRONZE_PATH: /opt/retailhub/data/bronze
+      BRONZE_CHECKPOINT_PATH: /opt/retailhub/checkpoints/bronze
+
+    volumes:
+      - ../../data:/opt/retailhub/data
+      - ../../checkpoints:/opt/retailhub/checkpoints
+
+    command:
+      - spark-submit
+      - /opt/retailhub/src/streaming/kafka_to_bronze.py
+
+
+  fraud-streaming:
+    image: retailhub-spark-streaming:4.2.0
+    container_name: retailhub-fraud-streaming
+    restart: unless-stopped
+
+    networks:
+      - kafka_default
+
+    env_file:
+      - ../../.env
+
+    environment:
+      KAFKA_BROKER: kafka:29092
+      FRAUD_CHECKPOINT_PATH: /opt/retailhub/checkpoints/fraud_detection_v4
+
+    volumes:
+      - ../../checkpoints:/opt/retailhub/checkpoints
+
+    command:
+      - spark-submit
+      - /opt/retailhub/src/streaming/fraud_consumer.py
+
+
+networks:
+  kafka_default:
+    external: true
