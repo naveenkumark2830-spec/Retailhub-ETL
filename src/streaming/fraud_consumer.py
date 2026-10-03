@@ -98,6 +98,7 @@ from fraudguard.restriction_manager import (
 )
 from fraudguard.audit_logger import log_audit
 from fraudguard.ai_investigator import investigate_incident
+from fraudguard.kafka_producer import publish_fraud_decision
 
 import json
 import logging
@@ -874,14 +875,31 @@ def emit_alert(
         customer_id=customer_id,
     )
 
+        # ------------------------------------------------------------------
+    # 6. Publish finalized FraudGuard decision to Kafka
     # ------------------------------------------------------------------
-    # Future production implementation:
-    #
-    # notify response engine
-    # send to AI investigation agent
-    #
-    # We deliberately do not perform network calls here.
-    # ------------------------------------------------------------------
+    publish_fraud_decision(
+        incident_id=incident_id,
+        customer_id=customer_id,
+        fraud_type=fraud_type,
+        severity=severity,
+        reason=reason,
+        risk_score=risk.score,
+        risk_level=risk.level,
+        action=response.action,
+        requires_customer_action=response.requires_customer_action,
+        requires_admin_review=response.requires_admin_review,
+        restriction_minutes=response.restriction_minutes,
+        ai_attack_pattern=investigation.attack_pattern,
+        ai_finding=investigation.finding,
+        ai_confidence=investigation.confidence,
+        ai_recommendation=investigation.recommendation,
+        event_id=event.get("event_id"),
+        event_type=event.get("event_type"),
+        ip_address=event.get("ip_address"),
+        device_id=event.get("device_id"),
+        session_id=event.get("session_id"),
+    )
 
 
 # ---------------------------------------------------------------------------
