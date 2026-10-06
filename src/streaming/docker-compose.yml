@@ -3,6 +3,7 @@ services:
   bronze-streaming:
     image: naveen9200/retailhub-spark-streaming:4.2.0
     container_name: retailhub-bronze-streaming
+    user: root 
     restart: unless-stopped
 
     networks:
@@ -29,6 +30,7 @@ services:
   fraud-streaming:
     image: naveen9200/retailhub-spark-streaming:4.2.0
     container_name: retailhub-fraud-streaming
+    user: root 
     restart: unless-stopped
 
     networks:
@@ -49,12 +51,6 @@ services:
       FRAUDGUARD_AUDIT_PATH: /opt/retailhub/data/fraudguard/audit
       FRAUDGUARD_EVIDENCE_PATH: /opt/retailhub/data/fraudguard/evidence
       FRAUDGUARD_LOG_PATH: /opt/retailhub/logs/fraudguard
-
-      # Gemini AI runtime variables
-      FRAUDGUARD_AI_ENABLED: ${FRAUDGUARD_AI_ENABLED:-true}
-      FRAUDGUARD_AI_PROVIDER: ${FRAUDGUARD_AI_PROVIDER:-gemini}
-      FRAUDGUARD_AI_MODEL: ${FRAUDGUARD_AI_MODEL:-gemini-3-flash-preview}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
 
     volumes:
       - ../../data:/opt/retailhub/data
