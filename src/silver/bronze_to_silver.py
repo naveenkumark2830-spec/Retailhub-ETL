@@ -16,19 +16,22 @@
 #   6. Silver remains event-level Parquet.
 # ================================================================
 
-import glob
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType, LongType,
-    DoubleType, BooleanType
+    DoubleType, BooleanType, TimestampType
 )
 from config.settings import (
     BRONZE_PATH,
     SILVER_PATH,
     QUARANTINE_PATH,
 )
+
+BRONZE_PATH = BRONZE_PATH.rstrip("/")
+SILVER_PATH = SILVER_PATH.rstrip("/")
+QUARANTINE_PATH = QUARANTINE_PATH.rstrip("/")
 
 # -----------------------------
 # 1. SPARK
@@ -239,9 +242,23 @@ valid_event_types = [
 # -----------------------------
 # 4. READ BRONZE
 # -----------------------------
-bronze_files = glob.glob(f"{BRONZE_PATH}/*.parquet")
-bronze = spark.read.parquet(*bronze_files)
-bronze_count = bronze.count()
+BRONZE_SCHEMA = StructType([
+    StructField("topic", StringType(), True),
+    StructField("partition", IntegerType(), True),
+    StructField("offset", LongType(), True),
+    StructField("kafka_timestamp", TimestampType(), True),
+    StructField("kafka_key", StringType(), True),
+    StructField("event_json", StringType(), True),
+    StructField("bronze_ingestion_time", TimestampType(), True),
+])
+
+try:
+    bronze = spark.read.schema(BRONZE_SCHEMA).parquet(BRONZE_PATH)
+    bronze_count = bronze.count()
+except Exception as e:
+    print(f"Warning: Could not read Bronze path ({BRONZE_PATH}): {e}")
+    bronze = spark.createDataFrame([], BRONZE_SCHEMA)
+    bronze_count = 0
 
 print("\n" + "=" * 70)
 print("RETAILHUB BRONZE -> SILVER")
