@@ -1,37 +1,45 @@
 # RetailHub Data Platform 🚀
-### Real-Time Streaming Ingestion, AI Fraud Defense & Medallion Lakehouse on AWS
+### Real-Time Spark Structured Streaming & Medallion Lakehouse on AWS
 
 [![Apache Spark](https://img.shields.io/badge/Apache%20Spark-4.2.0-E25A1C?logo=apachespark&logoColor=white)](https://spark.apache.org/)
+[![Spark Structured Streaming](https://img.shields.io/badge/Spark-Structured%20Streaming-E25A1C?logo=apachespark&logoColor=white)](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html)
 [![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.8%20(KRaft)-231F20?logo=apachekafka&logoColor=white)](https://kafka.apache.org/)
 [![AWS Cloud](https://img.shields.io/badge/AWS-S3%20%7C%20RDS%20%7C%20EC2%20%7C%20ALB-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
-[![Terraform](https://img.shields.io/badge/Terraform-1.9.0-844FBA?logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![AWS Glue & Athena](https://img.shields.io/badge/Metadata%20%26%20Query-Glue%20%7C%20Athena-232F3E?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/athena/)
 [![Docker](https://img.shields.io/badge/Docker-Hub%20Pushed-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/u/naveen9200)
+(https://hub.docker.com/r/naveen9200/)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-2.9.3-017CEE?logo=apacheairflow&logoColor=white)](https://airflow.apache.org/)
-[![Google Gemini AI](https://img.shields.io/badge/AI%20Defense-Gemini%202.5%20Flash-4285F4?logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
-An enterprise-grade, cloud-native **Medallion Data Lakehouse (Bronze → Silver → Gold)** and **Real-Time Streaming Engine** built with **PySpark 4.2.0**, **Apache Kafka (KRaft)**, **AWS**, and **Docker**.
+An enterprise-grade, cloud-native **Medallion Data Lakehouse (Bronze → Silver → Gold)** and **Real-Time Streaming Platform** built with **PySpark 4.2.0**, **Apache Kafka (KRaft)**, and **Amazon Web Services (AWS)**.
 
-The platform captures high-velocity e-commerce events, conducts sub-second deterministic fraud detection with **Gemini AI** risk explanation, cleanses and deduplicates records with strict physical Kafka lineage, and models data into a Kimball Star Schema for business intelligence and executive analytics.
+The platform continuously streams live e-commerce clickstream and transaction events via **Spark Structured Streaming**, preserves immutable raw data in S3 Bronze, cleanses and deduplicates records with physical Kafka offset lineage in S3 Silver, and models analytical datasets into a **Kimball Star Schema** in S3 Gold cataloged by **AWS Glue** and queried with **Amazon Athena**.
+
+---
+
+## 🔗 Related Repositories
+
+### 📊 ETL Data Pipeline Repository
+The batch and streaming ETL pipeline for processing historical clickstream telemetry, data warehouse transformations, and analytics modeling is hosted in a separate dedicated repository:
+
+👉 **[RetailHub ETL Data Pipeline Repository](https://github.com/naveenkumark2830-spec/RetailHub-E-Commerce-Webiste)**  
+*URL*: `https://github.com/naveenkumark2830-spec/RetailHub-E-Commerce-Webiste`
 
 ---
 
 ## 📑 Table of Contents
 1. [System Architecture](#-system-architecture)
 2. [E-Commerce Web Application (NexDay Platform)](#-e-commerce-web-application-nexday-platform)
-3. [Docker Hub Container Ecosystem](#-docker-hub-container-ecosystem)
-4. [Medallion Architecture & Pipelines](#-medallion-architecture--pipelines)
-   - [Bronze Streaming (Kafka → S3 Bronze)](#1-layer-1-bronze-streaming-ingestion-kafka--s3)
-   - [Real-Time FraudGuard Defense Engine](#2-layer-15-real-time-ai-fraudguard-defense)
-   - [Silver Cleansing & Deduplication (Bronze → S3 Silver)](#3-layer-2-silver-cleansing--deduplication)
-   - [Gold Dimensional Modeling (Kimball Star Schema)](#4-layer-3-gold-dimensional-modeling-star-schema)
-5. [Repository Structure](#-repository-structure)
-6. [AWS Infrastructure Automation (Terraform)](#-aws-infrastructure-automation-terraform)
-7. [Getting Started & Runbook](#-getting-started--runbook)
-   - [Local Quickstart (Docker Compose)](#local-quickstart-docker-compose)
-   - [AWS Cloud Execution](#aws-cloud-execution)
+3. [AWS Cloud Infrastructure & Services](#-aws-cloud-infrastructure--services)
+4. [Docker Hub Container Ecosystem](#-docker-hub-container-ecosystem)
+5. [How to Pull & Run Docker Images on AWS](#-how-to-pull--run-docker-images-on-aws)
+6. [Data Processing Layers & Pipelines](#-data-processing-layers--pipelines)
+   - [Spark Structured Streaming (Kafka → S3 Bronze)](#1-spark-structured-streaming-ingestion-kafka--s3-bronze)
+   - [Silver Cleansing & Deduplication (Bronze → S3 Silver)](#2-silver-cleansing-lineage--deduplication-batch)
+   - [Gold Dimensional Modeling (Kimball Star Schema)](#3-gold-dimensional-modeling-star-schema)
+7. [Repository Structure](#-repository-structure)
 8. [Environment Configuration (.env)](#-environment-configuration-env)
-9. [Engineering Handbook & Documentation](#-engineering-handbook--documentation)
+9. [Engineering Documentation](#-engineering-documentation)
 
 ---
 
@@ -39,44 +47,48 @@ The platform captures high-velocity e-commerce events, conducts sub-second deter
 
 ```mermaid
 flowchart TD
-    subgraph Frontend["E-COMMERCE PRODUCER (External Repo)"]
-        WEB["NexDay E-Commerce Web App<br/>(naveen9200/website_app:latest)<br/>Cart, Checkout, Browsing, Orders"]
+    subgraph ClientTier["CLIENT & WEB APPLICATION (External Repository)"]
+        WEB["NexDay E-Commerce Web Application<br/>Docker: naveen9200/website_app:latest<br/>Catalog, Shopping Cart, Checkout, Orders"]
     end
 
-    subgraph Streaming["1. INGESTION & AI DEFENSE (Real-Time)"]
-        KAFKA["Apache Kafka 3.8 (KRaft)<br/>12 Event Topics (retail_.*)"]
-        STREAM["Spark Structured Streaming<br/>(naveen9200/retailhub-spark-streaming:4.2.0)<br/>kafka_to_bronze.py (5s trigger)"]
-        FG["FraudGuard Defense Engine<br/>fraud_consumer.py (foreachBatch)<br/>15 Deterministic Rules + Gemini AI"]
-        ALERTS["Kafka Topic: retail_fraud_alerts"]
-        BRONZE[("S3 Bronze Bucket<br/>s3a://.../bronze/events<br/>(Immutable Raw Parquet)")]
+    subgraph StreamingTier["1. REAL-TIME STREAMING INGESTION TIER"]
+        KAFKA["Apache Kafka 3.8 Cluster (KRaft Mode)<br/>12 Operational Event Topics (retail_.*)"]
+        SPARK_STREAM["Apache Spark Structured Streaming<br/>Docker: naveen9200/retailhub-spark-streaming:4.2.0<br/>Script: kafka_to_bronze.py (5s Trigger)"]
+        BRONZE_S3[("Amazon S3 Bronze Bucket<br/>s3a://retailhub-bronze/events<br/>Raw Immutable Parquet Files")]
+        CHECKPOINT_S3[("Amazon S3 Checkpoint Bucket<br/>s3a://retailhub-checkpoints/bronze<br/>Fault-Tolerant Write-Ahead Logs")]
 
-        WEB -->|Publish Events| KAFKA
-        KAFKA --> STREAM --> BRONZE
-        KAFKA --> FG --> ALERTS
+        WEB -->|JSON Event Stream| KAFKA
+        KAFKA -->|Continuous readStream| SPARK_STREAM
+        SPARK_STREAM -->|Append Micro-Batches| BRONZE_S3
+        SPARK_STREAM -.->|State Checkpointing| CHECKPOINT_S3
     end
 
-    subgraph Silver["2. CLEANSING & PHYSICAL LINEAGE (Batch)"]
-        S_BATCH["Spark Batch Ingestion<br/>(naveen9200/retailhub-spark-batch:4.2.0)<br/>bronze_to_silver.py"]
-        L_JOIN["Lineage Left-Anti Join<br/>(topic, partition, offset)"]
-        DEDUP["Window-based Deduplication<br/>row_number() over (event_id)"]
-        DQ["25+ Business Validation Rules"]
-        SILVER_S3[("S3 Silver Bucket<br/>12 Domain Folders<br/>order_events, payment_events...")]
-        QUAR_S3[("S3 Quarantine Bucket<br/>s3a://.../quarantine/events")]
+    subgraph SilverTier["2. BATCH CLEANSING & LINEAGE TIER"]
+        SPARK_SILVER["Spark Batch Processing<br/>Docker: naveen9200/retailhub-spark-batch:4.2.0<br/>Script: bronze_to_silver.py"]
+        LINEAGE["Physical Lineage Tracking<br/>Kafka Coordinates: topic, partition, offset<br/>Idempotent Left-Anti Join"]
+        DEDUP["Multi-Layer Window Deduplication<br/>row_number() over event_id"]
+        VALIDATION["25+ Data Quality Rules<br/>Schema & Range Boundary Validation"]
+        SILVER_S3[("Amazon S3 Silver Bucket<br/>12 Partitioned Domain Folders<br/>order_events, payment_events...")]
+        QUARANTINE_S3[("Amazon S3 Quarantine Bucket<br/>s3a://retailhub-quarantine/events<br/>Corrupt, Duplicate, Malformed Records")]
 
-        BRONZE --> S_BATCH --> L_JOIN --> DEDUP --> DQ
-        DQ -->|Valid Events| SILVER_S3
-        DQ -->|Corrupt / Duplicates| QUAR_S3
+        BRONZE_S3 --> SPARK_SILVER
+        SPARK_SILVER --> LINEAGE --> DEDUP --> VALIDATION
+        VALIDATION -->|Valid Cleansed Records| SILVER_S3
+        VALIDATION -->|Failed Validation| QUARANTINE_S3
     end
 
-    subgraph Gold["3. STAR SCHEMA LAKEHOUSE (Analytics)"]
-        RDS[("AWS RDS MySQL<br/>products, customers, categories")]
-        DIMS["Dimension Loaders (JDBC)<br/>dim_date, dim_product,<br/>dim_customer, dim_category"]
-        FACTS["Fact Lifecycle Engines<br/>fact_orders, fact_order_items,<br/>fact_payments, fact_delivery,<br/>fact_product_interactions"]
-        GOLD_S3[("S3 Gold Bucket<br/>Star Schema Parquet Tables")]
-        ATHENA["AWS Athena / Glue Catalog<br/>Executive BI & Reporting"]
+    subgraph GoldTier["3. ANALYTICAL STAR SCHEMA & METADATA TIER"]
+        RDS_MYSQL[("Amazon RDS MySQL<br/>Master Data: products, customers, categories")]
+        SPARK_GOLD["Spark Batch Star Schema Jobs<br/>Docker: naveen9200/retailhub-spark-batch:4.2.0<br/>4 Dimensions (dim_*) & 5 Facts (fact_*)"]
+        GOLD_S3[("Amazon S3 Gold Bucket<br/>Conformed Star Schema Tables")]
+        GLUE_CATALOG["AWS Glue Data Catalog<br/>Centralized Metadata & Table Schemas"]
+        ATHENA["Amazon Athena<br/>Serverless SQL Queries & BI Reporting"]
 
-        RDS --> DIMS --> GOLD_S3
-        SILVER_S3 --> FACTS --> GOLD_S3
+        RDS_MYSQL -->|JDBC Extract| SPARK_GOLD
+        SILVER_S3 -->|Domain Aggregations| SPARK_GOLD
+        SPARK_GOLD -->|Materialized Parquet| GOLD_S3
+        GOLD_S3 -.->|Schema Crawling| GLUE_CATALOG
+        GLUE_CATALOG --> ATHENA
         GOLD_S3 --> ATHENA
     end
 ```
@@ -85,73 +97,134 @@ flowchart TD
 
 ## 🌐 E-Commerce Web Application (NexDay Platform)
 
-The producer application generating live e-commerce clickstream and transaction traffic is **RetailHub NexDay**, hosted in a dedicated repository:
+The event-producing frontend for this data platform is **RetailHub NexDay**, hosted in a dedicated repository:
 
 * **Repository Location**: Separate standalone repository (`retailhub-nexday` / `website_app`).
-* **Docker Image**: [`naveen9200/website_app:latest`](https://hub.docker.com/r/naveen9200/website_app)
-* **Technology**: Modern Full-Stack Web Platform (Node.js/Next.js/Python backend) with direct Kafka event instrumentation.
-* **Integration**: The web app communicates directly with Apache Kafka on port `9092` (external) or `29092` (internal Docker network). Every user interaction—searching products, adding items to carts, applying coupons, initiating checkouts, submitting payments, or rating items—emits typed JSON messages into RetailHub's Kafka event topics.
+* **Docker Hub Image**: [`naveen9200/website_app:latest`](https://hub.docker.com/r/naveen9200/website_app)
+* **Technology**: Modern Full-Stack Web Platform (Node.js/Next.js/Python backend) with native event instrumentation.
+* **Kafka Integration**: The application connects to Apache Kafka on port `9092` (host/EC2) or `29092` (internal Docker network). Every user interaction—searching products, adding items to carts, applying coupons, submitting payments, or rating items—publishes typed JSON messages across RetailHub's 12 event topics.
+
+---
+
+## ☁️ AWS Cloud Infrastructure & Services
+
+The platform is designed around AWS cloud services with zero-trust networking:
+
+| AWS Service | Component Role | Architectural Purpose & Implementation |
+| :--- | :--- | :--- |
+| **IAM Roles & Policies** | Security & Auth | EC2 instances use **IAM Instance Profiles**. Uses `AmazonSSMManagedInstanceCore` for secure shell access without SSH (port 22 closed). Least-privilege S3 bucket policies allow Spark to read and write without hardcoded AWS access keys. |
+| **Amazon EC2** | Compute Tier | Private subnet EC2 instances running Dockerized workers: Web App, Kafka broker, Spark Streaming, Spark Batch, and Apache Airflow. |
+| **Application Load Balancer (ALB)** | Ingress Traffic | Internet-facing ALB in public subnets routing HTTP/HTTPS web traffic directly to the NexDay web container on port `5000` in the private subnet. |
+| **Amazon S3** | Data Lake Storage | 5 Server-Side Encrypted (SSE-S3) buckets: `retailhub-bronze`, `retailhub-silver`, `retailhub-gold`, `retailhub-quarantine`, and `retailhub-checkpoints`. |
+| **Amazon RDS MySQL** | Relational Master | Multi-AZ MySQL database storing operational transactional master data: `products`, `customers`, and `categories`. |
+| **AWS Glue Data Catalog** | Metadata Catalog | Centralized metadata metastore maintaining schemas, partitions, and data types for Bronze, Silver, and Gold Parquet datasets. |
+| **Amazon Athena** | Serverless SQL | Interactive serverless query engine allowing analysts to run SQL queries directly on S3 Gold Parquet tables using Glue catalog metadata. |
 
 ---
 
 ## 🐳 Docker Hub Container Ecosystem
 
-All components are containerized, optimized, and published to Docker Hub:
+All images are pre-built, hardened, and pushed to Docker Hub:
 
-| Container Image | Tag | Docker Hub URI | Purpose / Responsibilities |
+| Container Image | Version / Tag | Docker Hub Repository | Description |
 | :--- | :--- | :--- | :--- |
-| **Spark Streaming** | `4.2.0`, `latest` | [`naveen9200/retailhub-spark-streaming`](https://hub.docker.com/r/naveen9200/retailhub-spark-streaming) | Runs `kafka_to_bronze.py` Structured Streaming and `fraud_consumer.py` real-time AI security engine. Built on Java 21 LTS & Spark 4.2.0. |
-| **Spark Batch** | `4.2.0`, `latest` | [`naveen9200/retailhub-spark-batch`](https://hub.docker.com/r/naveen9200/retailhub-spark-batch) | Executes `bronze_to_silver.py` cleansing, lineage anti-joins, and all 9 Gold Star Schema batch transformations (`dim_*`, `fact_*`). |
-| **NexDay Web App** | `latest` | [`naveen9200/website_app`](https://hub.docker.com/r/naveen9200/website_app) | Complete e-commerce store with catalog browsing, shopping cart, customer checkout, and live Kafka event producers. |
-| **Apache Kafka** | `latest` | `apache/kafka:latest` | High-throughput distributed message broker running in **KRaft** mode (no ZooKeeper dependency). |
-
-> **Docker Optimization Note**: The Spark Dockerfiles strip redundant 450MB pip-reinstalled PySpark binaries from the base `apache/spark:4.2.0-python3` image, cutting image build time by 70% and drastically reducing EC2 pull latency.
+| **Spark Streaming** | `4.2.0`, `latest` | [`naveen9200/retailhub-spark-streaming`](https://hub.docker.com/r/naveen9200/retailhub-spark-streaming) | Runs Spark Structured Streaming ingestion (`kafka_to_bronze.py`). Built on Java 21 LTS and Apache Spark 4.2.0. |
+| **Spark Batch** | `4.2.0`, `latest` | [`naveen9200/retailhub-spark-batch`](https://hub.docker.com/r/naveen9200/retailhub-spark-batch) | Executes `bronze_to_silver.py` and all 9 Gold Star Schema batch transformations (`dim_*`, `fact_*`). Includes MySQL JDBC driver. |
+| **NexDay Web App** | `latest` | [`naveen9200/website_app`](https://hub.docker.com/r/naveen9200/website_app) | Full-stack e-commerce web platform generating live customer events into Kafka topics. |
+| **Apache Kafka** | `latest` | `apache/kafka:latest` | Distributed streaming broker running in **KRaft** mode (no ZooKeeper dependency). |
 
 ---
 
-## 🔄 Medallion Architecture & Pipelines
+## 📥 How to Pull & Run Docker Images on AWS
 
-### 1. Layer 1: Bronze Streaming Ingestion (Kafka → S3)
+### 1. Connect to your EC2 Instance via AWS SSM
+Because all EC2 instances are in private subnets with no public SSH access, connect using **AWS Systems Manager (SSM)**:
+```bash
+aws ssm start-session --target <EC2-INSTANCE-ID>
+```
+
+### 2. Verify Docker is Running on EC2
+```bash
+sudo systemctl status docker
+```
+
+### 3. Pull the Docker Images from Docker Hub
+Pull the pre-built images directly on your AWS EC2 instance:
+```bash
+# Pull Spark Streaming Image
+docker pull naveen9200/retailhub-spark-streaming:4.2.0
+
+# Pull Spark Batch Image
+docker pull naveen9200/retailhub-spark-batch:4.2.0
+
+# Pull NexDay E-Commerce Web Application
+docker pull naveen9200/website_app:latest
+
+# Pull Apache Kafka (KRaft)
+docker pull apache/kafka:latest
+```
+
+### 4. Running the Spark Streaming Job on AWS
+Because the EC2 instance has an **IAM Role** attached with S3 permissions, Spark uses AWS Hadoop's `DefaultAWSCredentialsProviderChain` automatically—**no AWS keys are needed in the container environment**:
+```bash
+docker run -d --name retailhub-streaming \
+  --restart unless-stopped \
+  -e KAFKA_BROKER=10.0.139.252:9092 \
+  -e BRONZE_PATH=s3a://retailhub-bronze-252bda/events \
+  -e BRONZE_CHECKPOINT_PATH=s3a://retailhub-checkpoints-252bda/bronze \
+  naveen9200/retailhub-spark-streaming:4.2.0 \
+  spark-submit /opt/retailhub/src/streaming/kafka_to_bronze.py
+```
+
+### 5. Running the Spark Batch Silver Pipeline on AWS
+```bash
+docker run --rm \
+  --env-file /opt/retailhub-batch/.env \
+  -e BRONZE_PATH=s3a://retailhub-bronze-252bda/events \
+  -e SILVER_PATH=s3a://retailhub-silver-252bda/events \
+  -e QUARANTINE_PATH=s3a://retailhub-quarantine-252bda/events \
+  naveen9200/retailhub-spark-batch:4.2.0 \
+  spark-submit /opt/retailhub/src/silver/bronze_to_silver.py
+```
+
+### 6. Running Gold Fact & Dimension Builds on AWS
+```bash
+# Build Dimensions (from MySQL RDS via JDBC)
+docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/dim_date.py
+docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/dim_product.py
+docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/dim_customer.py
+
+# Build Fact Tables
+docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_orders.py
+docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_order_items.py
+docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_payments.py
+docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_delivery.py
+docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_product_interactions.py
+```
+
+---
+
+## 🔄 Data Processing Layers & Pipelines
+
+### 1. Spark Structured Streaming Ingestion (Kafka → S3 Bronze)
 * **File**: [`src/streaming/kafka_to_bronze.py`](src/streaming/kafka_to_bronze.py)
-* **Engine**: Spark Structured Streaming with micro-batch trigger (`processingTime="5 seconds"`).
-* **Topic Subscription**: Dynamic regex pattern `retail_.*` capturing all 12 operational Kafka topics.
-* **Physical Lineage**: Every event extracts its exact physical coordinates: `topic`, `partition`, `offset`, `kafka_timestamp`, `kafka_key`, and appends `bronze_ingestion_time` via `current_timestamp()`.
-* **Immutability Guarantee**: Raw payload is preserved untouched as `event_json` in append-only Snappy Parquet.
-* **Fault Tolerance**: Checkpoints maintained in S3 (`s3a://.../checkpoints/bronze`).
+* **Engine**: Apache Spark Structured Streaming with micro-batch trigger (`processingTime="5 seconds"`).
+* **Topic Subscription**: Dynamic regex pattern `retail_.*` discovering all 12 operational Kafka topics automatically.
+* **Physical Lineage**: Every event captures its physical coordinates: `topic`, `partition`, `offset`, `kafka_timestamp`, `kafka_key`, and appends `bronze_ingestion_time` via `current_timestamp()`.
+* **Immutability Guarantee**: Raw JSON payload is stored untouched as `event_json` in append-only Snappy Parquet.
+* **Fault Tolerance**: Exactly-once processing semantics guaranteed via write-ahead log checkpointing in S3 (`s3a://.../checkpoints/bronze`).
 
-### 2. Layer 1.5: Real-Time AI FraudGuard Defense
-* **File**: [`src/streaming/fraud_consumer.py`](src/streaming/fraud_consumer.py)
-* **Engine**: Structured Streaming `readStream` + `foreachBatch` bounded memory engine.
-* **Backpressure**: `maxOffsetsPerTrigger=5000` caps batch size during traffic bursts.
-* **15 Deterministic Fraud Rules**:
-  1. `CARD_TESTING`: ≥ 3 failed transactions in 5 minutes.
-  2. `PAYMENT_VELOCITY`: > 4 payment attempts in 10 minutes on a single account.
-  3. `MULTI_ACCOUNT_IP`: > 3 customer accounts operating from a single IP.
-  4. `ACCOUNT_TAKEOVER`: Authentication failures followed by immediate credential change.
-  5. `NEW_DEVICE_SENSITIVE`: Address/profile modification on unrecorded device fingerprint.
-  6. `COUPON_ABUSE`: Single promo code redeemed across disparate accounts.
-  7. `HIGH_VALUE_BURST`: Order amount > $1,000 and 2× customer baseline.
-  8. `IMPOSSIBLE_TRAVEL`: Velocity between consecutive logins exceeds 800 km/h.
-  9. `REFUND_ABUSE`: > 3 return requests within 7 days.
-  10. `SESSION_HIJACK`: IP address changed mid-session.
-  11. `BOT_CART_HOARDING`: > 20 items reserved in cart in < 60 seconds.
-  12. `ADDRESS_MISMATCH`: Billing state ≠ Shipping state discrepancy.
-  13. `OFF_HOURS_ADMIN`: Administrative privileges exercised between 00:00–05:00 UTC.
-  14. `CHARGEBACK_CLUSTER`: Hardware device linked to historical payment chargebacks.
-  15. `SYNTHETIC_IDENTITY`: Disposable temporary email domain paired with VOIP telephone.
-* **Gemini AI Integration**: High-risk alerts invoke **Google Gemini 2.5 Flash** asynchronously to produce structured risk synopses (0–100 score) emitted to `retail_fraud_alerts`.
-
-### 3. Layer 2: Silver Cleansing & Deduplication
+### 2. Silver Cleansing, Lineage & Deduplication (Batch)
 * **File**: [`src/silver/bronze_to_silver.py`](src/silver/bronze_to_silver.py)
-* **Incremental Lineage Anti-Join**: Reads historical coordinates `(topic, partition, offset)` from existing Silver domain folders and Quarantine. Executes `left_anti` join against Bronze, guaranteeing that only new, unprocessed records are parsed.
-* **Deep Schema Parsing**: Unpacks `event_json` using nested `event_schema` into `context` (device, IP, geo), `entity` (IDs), and `metadata` (amounts, prices).
+* **Incremental Lineage Anti-Join**: Scans historical coordinates `(topic, partition, offset)` from existing Silver domain folders and Quarantine. Executes `left_anti` join against Bronze, ensuring that only new records are parsed.
+* **Deep Schema Parsing**: Parses `event_json` using nested `event_schema` into `context` (device, IP, geo), `entity` (foreign keys), and `metadata` (amounts, prices).
 * **Latency Features**: Computes `event_arrival_lag_seconds` and `producer_ingestion_lag_seconds`.
 * **Multi-Layer Deduplication**: Window function `row_number() over (partitionBy event_id orderBy kafka_timestamp desc, offset desc)` isolates duplicates. Cross-run checks prevent re-ingestion.
 * **25+ Quarantine Rules**: Corrupt JSON, negative prices, missing foreign keys, and invalid ratings (outside 1..5) route to `s3a://.../quarantine/events`.
 * **12 Domain Folders**: Clean events route to `order_events`, `payment_events`, `delivery_events`, `fulfillment_events`, `cart_events`, `discovery_events`, `checkout_events`, `coupon_events`, `return_events`, `user_events`, `admin_events`, and `system_events`.
-* **Reconciliation Invariant**: Strictly enforces `valid_count + quarantine_count == new_bronze_count`.
+* **Reconciliation Invariant**: Enforces `valid_count + quarantine_count == new_bronze_count`.
 
-### 4. Layer 3: Gold Dimensional Modeling (Star Schema)
+### 3. Gold Dimensional Modeling (Star Schema)
 * **The 4 Dimensions**:
   * [`dim_date.py`](src/gold/dim_date.py): Algorithmic calendar generation (2020–2030) with `date_key`, year, quarter, month, day, is_weekend, fiscal periods.
   * [`dim_product.py`](src/gold/dim_product.py): AWS RDS MySQL JDBC read of `products` master. SCD Type 1 attributes, brand, pricing tiers.
@@ -159,187 +232,17 @@ All components are containerized, optimized, and published to Docker Hub:
   * [`dim_category.py`](src/gold/dim_category.py): Category & subcategory taxonomy hierarchy from RDS MySQL.
 * **The 5 Facts**:
   * [`fact_orders.py`](src/gold/fact_orders.py): Order lifecycle fact. Joins 4 Silver domains. Computes cycle latency (`order_to_payment_seconds`, `order_to_ship_seconds`, `order_to_delivery_seconds`) and financial integrity. Cached in-memory upsert overwrite.
-  * [`fact_order_items.py`](src/gold/fact_order_items.py): Line item grain. Combines 6 Silver domains. Computes item line totals, tax, allocated discounts, return statuses.
+  * [`fact_order_items.py`](src/gold/fact_order_items.py): Line item grain. Combines 6 Silver domains. Computes line totals, tax, discounts, return statuses.
   * [`fact_payments.py`](src/gold/fact_payments.py): Payment lifecycle fact (`initiated` → `retry` → `success`/`failed`/`refund`). Chronology validation and gateway breakdown.
   * [`fact_delivery.py`](src/gold/fact_delivery.py): Shipment milestone tracking (`in_transit`, `out_for_delivery`, `delivered`, `failed`). Carrier transit latency and SLA fulfillment.
   * [`fact_product_interactions.py`](src/gold/fact_product_interactions.py): Clickstream behavioral fact. Combines `discovery_events` and `cart_events`. Conversion funnels, search rank positions, CTR.
 
----
-
-## 📂 Repository Structure
-
-```text
-RetailHub-Spark/
-├── .env.example.aws                  # Reference environment variables for AWS
-├── README.md                         # Project documentation and architectural manual
-├── requirements.txt                  # Python dependencies
-├── RetailHub_Engineering_Handbook.pdf# Compiled 16-page engineering handbook
-├── RetailHub_Spark_Medallion_Architecture_Handbook.pdf # 10-page deep-dive PDF
-│
-├── docker/                           # Optimized Docker image specifications
-│   ├── spark-streaming/
-│   │   └── Dockerfile               # Spark 4.2.0 + Kafka + FraudGuard container
-│   └── spark-batch/
-│       └── Dockerfile               # Spark 4.2.0 + MySQL JDBC + Batch pipelines container
-│
-├── fraudguard/                       # Real-time AI security & rules engine
-│   ├── rules/                       # Deterministic fraud rules
-│   └── explainer.py                 # Google Gemini 2.5 Flash LLM integration
-│
-├── src/                              # Core data engineering source code
-│   ├── config/
-│   │   └── settings.py              # Centralized environment & path resolver
-│   ├── schemas/
-│   │   └── event_schema.py          # Canonical e-commerce JSON schema
-│   ├── streaming/
-│   │   ├── kafka_to_bronze.py       # Spark Structured Streaming (Kafka -> S3 Bronze)
-│   │   ├── fraud_consumer.py        # Real-time FraudGuard stream processing
-│   │   └── docker-compose.yml       # Local Kafka (KRaft) & streaming orchestration
-│   ├── silver/
-│   │   └── bronze_to_silver.py      # Cleansing, lineage anti-join, dedup & quarantine
-│   └── gold/
-│       ├── dim_date.py              # Calendar dimension generator (2020-2030)
-│       ├── dim_product.py           # Product dimension (RDS MySQL JDBC)
-│       ├── dim_customer.py          # Customer dimension (RDS MySQL JDBC)
-│       ├── dim_category.py          # Category taxonomy dimension (RDS MySQL JDBC)
-│       ├── fact_orders.py           # Order lifecycle fact table
-│       ├── fact_order_items.py      # Order line-item fact table
-│       ├── fact_payments.py         # Payment transaction fact table
-│       ├── fact_delivery.py         # Logistics & delivery SLA fact table
-│       └── fact_product_interactions.py # Clickstream behavioral analytics fact table
-│
-├── airflow/                          # Workflow orchestration
-│   └── dags/
-│       └── gold_dag.py              # Airflow DAG coordinating Silver & Gold dependencies
-│
-└── terraform/                        # Complete AWS Cloud Infrastructure as Code
-    ├── main.tf                      # Terraform module wiring
-    ├── variables.tf                 # Cloud input variables
-    ├── outputs.tf                   # ALB DNS, RDS endpoint, S3 bucket outputs
-    ├── modules/
-    │   ├── vpc/                     # Custom VPC, 2 AZs, public/private subnets, NAT
-    │   ├── alb/                     # Internet-facing Application Load Balancer
-    │   ├── ec2/                     # 5 Private EC2 Instances (Web, Kafka, Stream, Batch, Airflow)
-    │   ├── rds/                     # Multi-AZ MySQL RDS instance
-    │   ├── s3/                      # 5 Encrypted S3 Buckets (Bronze, Silver, Gold, Quarantine, Checkpoints)
-    │   ├── iam/                     # IAM roles with least-privilege S3/SSM permissions
-    │   ├── security_groups/         # Zero-trust security groups
-    │   └── athena/                  # Glue Database & Athena Workgroup
-    └── scripts/
-        ├── bootstrap_web.sh         # EC2 User Data for Web App
-        ├── bootstrap_kafka.sh       # EC2 User Data for Kafka broker
-        ├── bootstrap_streaming.sh   # EC2 User Data for Streaming workers
-        ├── bootstrap_batch.sh       # EC2 User Data for Spark Batch
-        └── bootstrap_airflow.sh     # EC2 User Data for Airflow workers
-```
-
----
-
-## ☁️ AWS Infrastructure Automation (Terraform)
-
-The cloud environment is provisioned with modular Terraform (`terraform/`):
-* **Networking**: Custom VPC across 2 Availability Zones (`us-east-1a`, `us-east-1b`) with Public & Private Subnets, Internet Gateway, and NAT Gateway.
-* **Security**: Zero-trust Security Groups; all compute instances reside in **private subnets** with zero public IP addresses. Management access is secured through **AWS Systems Manager (SSM) Session Manager** (no open SSH port 22).
-* **Storage**: 5 S3 Buckets with Server-Side Encryption (SSE-S3), Bucket Ownership Controls, and Public Access Block:
-  - `retailhub-bronze-<id>`
-  - `retailhub-silver-<id>`
-  - `retailhub-gold-<id>`
-  - `retailhub-quarantine-<id>`
-  - `retailhub-checkpoints-<id>`
-* **Database**: Amazon RDS MySQL Multi-AZ database hosting operational `products`, `customers`, and `categories` tables.
-* **Compute**: 5 specialized EC2 instances bootstrapped via automated User Data scripts pulling pre-built Docker Hub images.
-
----
-
-## 🚀 Getting Started & Runbook
-
-### Local Quickstart (Docker Compose)
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/<your-username>/RetailHub-Spark.git
-   cd RetailHub-Spark
-   ```
-
-2. **Configure Environment**:
-   ```bash
-   cp .env.example.aws .env
-   # Edit .env with your local or cloud paths
-   ```
-
-3. **Start Kafka (KRaft mode) & NexDay Web App**:
-   ```bash
-   docker compose -f src/streaming/docker-compose.yml up -d
-   ```
-   * Kafka Broker starts on `localhost:9092`.
-   * Topic initializer creates all 12 `retail_.*` topics automatically.
-   * NexDay Web App is accessible at `http://localhost:5000`.
-
-4. **Launch Spark Structured Streaming (Bronze Ingestion)**:
-   ```bash
-   docker run -d --name retailhub-streaming \
-     --network host \
-     --env-file .env \
-     naveen9200/retailhub-spark-streaming:4.2.0 \
-     spark-submit /opt/retailhub/src/streaming/kafka_to_bronze.py
-   ```
-
-5. **Generate E-Commerce Events**:
-   Open `http://localhost:5000` in your browser. Browse products, add items to cart, and complete orders.
-
-6. **Execute Silver Cleansing Batch**:
-   ```bash
-   docker run --rm \
-     --network host \
-     --env-file .env \
-     naveen9200/retailhub-spark-batch:4.2.0 \
-     spark-submit /opt/retailhub/src/silver/bronze_to_silver.py
-   ```
-
-7. **Execute Gold Star Schema Builds**:
-   ```bash
-   # Dimensions
-   docker run --rm --network host --env-file .env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/dim_date.py
-   docker run --rm --network host --env-file .env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/dim_product.py
-   docker run --rm --network host --env-file .env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/dim_customer.py
-
-   # Fact Tables
-   docker run --rm --network host --env-file .env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_orders.py
-   docker run --rm --network host --env-file .env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_order_items.py
-   docker run --rm --network host --env-file .env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_payments.py
-   docker run --rm --network host --env-file .env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_delivery.py
-   docker run --rm --network host --env-file .env naveen9200/retailhub-spark-batch:4.2.0 spark-submit /opt/retailhub/src/gold/fact_product_interactions.py
-   ```
-
----
-
-### AWS Cloud Execution
-
-1. **Deploy Cloud Infrastructure with Terraform**:
-   ```bash
-   cd terraform
-   terraform init
-   terraform plan -out=tfplan
-   terraform apply tfplan
-   ```
-
-2. **Connect via AWS SSM (No SSH Key Needed)**:
-   ```bash
-   aws ssm start-session --target <EC2-INSTANCE-ID>
-   ```
-
-3. **Trigger Scheduled Pipelines via Apache Airflow**:
-   Navigate to the Airflow Web UI on the Airflow EC2 instance (or port-forward via SSM):
-   ```bash
-   aws ssm start-session --target <AIRFLOW-EC2-ID> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'
-   ```
-   Open `http://localhost:8080` and unpause `gold_dag`.
 
 ---
 
 ## ⚙️ Environment Configuration (.env)
 
-| Environment Variable | Description | Example (AWS Production) | Example (Local Dev) |
+| Environment Variable | Description | AWS Production Example | Local Dev Example |
 | :--- | :--- | :--- | :--- |
 | `KAFKA_BROKER` | Kafka bootstrap broker connection string | `10.0.139.252:9092` | `localhost:9092` |
 | `BRONZE_PATH` | S3 URI for raw Bronze Parquet files | `s3a://retailhub-bronze-252bda/events` | `./data/bronze` |
@@ -347,24 +250,12 @@ The cloud environment is provisioned with modular Terraform (`terraform/`):
 | `GOLD_PATH` | S3 URI for Star Schema Gold tables | `s3a://retailhub-gold-252bda/tables` | `./data/gold` |
 | `QUARANTINE_PATH` | S3 URI for corrupt / duplicate events | `s3a://retailhub-quarantine-252bda/events` | `./data/quarantine` |
 | `BRONZE_CHECKPOINT_PATH` | S3 URI for streaming ingestion checkpoint | `s3a://retailhub-checkpoints-252bda/bronze` | `./checkpoints/bronze` |
-| `FRAUD_CHECKPOINT_PATH` | S3 URI for FraudGuard checkpoint | `s3a://retailhub-checkpoints-252bda/fraud` | `./checkpoints/fraud` |
 | `MYSQL_HOST` | Amazon RDS MySQL endpoint | `retailhub-db.cz8...rds.amazonaws.com` | `localhost` |
 | `MYSQL_DATABASE` | Operational MySQL database name | `retailhub` | `retailhub` |
 | `MYSQL_USER` | MySQL database username | `admin` | `root` |
 | `MYSQL_PASSWORD` | MySQL database password | `******` | `******` |
-| `GEMINI_API_KEY` | Google Gemini API key for AI Fraud Explainer | `AIzaSy...` | `AIzaSy...` |
-
----
-
-## 📚 Engineering Handbook & Documentation
-
-This repository includes comprehensive, standalone PDF engineering documentation compiled directly from the codebase:
-
-1. [**`RetailHub_Spark_Medallion_Architecture_Handbook.pdf`**](RetailHub_Spark_Medallion_Architecture_Handbook.pdf): 10-page deep-dive manual covering the exact mathematical invariants, window deduplication mechanics, operational dry runs, and "how and how many" technical inventory.
-2. [**`RetailHub_Engineering_Handbook.pdf`**](RetailHub_Engineering_Handbook.pdf): 16-page full-stack cloud operations book covering Terraform infrastructure, security configurations, and container architectures.
 
 ---
 
 ## 📄 License
 This project is licensed under the Apache 2.0 License - see the LICENSE file for details.
-
