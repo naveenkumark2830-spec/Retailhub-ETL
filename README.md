@@ -7,7 +7,6 @@
 [![AWS Cloud](https://img.shields.io/badge/AWS-S3%20%7C%20RDS%20%7C%20EC2%20%7C%20ALB-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
 [![AWS Glue & Athena](https://img.shields.io/badge/Metadata%20%26%20Query-Glue%20%7C%20Athena-232F3E?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/athena/)
 [![Docker](https://img.shields.io/badge/Docker-Hub%20Pushed-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/u/naveen9200)
-(https://hub.docker.com/r/naveen9200/)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-2.9.3-017CEE?logo=apacheairflow&logoColor=white)](https://airflow.apache.org/)
 
