@@ -1,4 +1,4 @@
-# RetailHub Data Platform 🚀
+# RetailHub Data Platform 
 ### Real-Time Spark Structured Streaming & Medallion Lakehouse on AWS
 
 [![Apache Spark](https://img.shields.io/badge/Apache%20Spark-4.2.0-E25A1C?logo=apachespark&logoColor=white)](https://spark.apache.org/)
@@ -17,17 +17,17 @@ The platform continuously streams live e-commerce clickstream and transaction ev
 
 ---
 
-## 🔗 Related Repositories
+## Related Repositories
 
-### 📊 ETL Data Pipeline Repository
+### ETL Data Pipeline Repository
 The batch and streaming ETL pipeline for processing historical clickstream telemetry, data warehouse transformations, and analytics modeling is hosted in a separate dedicated repository:
 
-👉 **[RetailHub ETL Data Pipeline Repository](https://github.com/naveenkumark2830-spec/RetailHub-E-Commerce-Webiste)**  
+**[RetailHub ETL Data Pipeline Repository](https://github.com/naveenkumark2830-spec/RetailHub-E-Commerce-Webiste)**  
 *URL*: `https://github.com/naveenkumark2830-spec/RetailHub-E-Commerce-Webiste`
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 1. [System Architecture](#-system-architecture)
 2. [E-Commerce Web Application (NexDay Platform)](#-e-commerce-web-application-nexday-platform)
 3. [AWS Cloud Infrastructure & Services](#-aws-cloud-infrastructure--services)
@@ -43,7 +43,7 @@ The batch and streaming ETL pipeline for processing historical clickstream telem
 
 ---
 
-## 🏛 System Architecture
+##  System Architecture
 
 ```mermaid
 flowchart TD
@@ -95,7 +95,7 @@ flowchart TD
 
 ---
 
-## 🌐 E-Commerce Web Application (NexDay Platform)
+## E-Commerce Web Application (NexDay Platform)
 
 The event-producing frontend for this data platform is **RetailHub NexDay**, hosted in a dedicated repository:
 
@@ -106,7 +106,7 @@ The event-producing frontend for this data platform is **RetailHub NexDay**, hos
 
 ---
 
-## ☁️ AWS Cloud Infrastructure & Services
+## AWS Cloud Infrastructure & Services
 
 The platform is designed around AWS cloud services with zero-trust networking:
 
@@ -122,7 +122,7 @@ The platform is designed around AWS cloud services with zero-trust networking:
 
 ---
 
-## 🐳 Docker Hub Container Ecosystem
+##  Docker Hub Container Ecosystem
 
 All images are pre-built, hardened, and pushed to Docker Hub:
 
@@ -134,8 +134,7 @@ All images are pre-built, hardened, and pushed to Docker Hub:
 | **Apache Kafka** | `latest` | `apache/kafka:latest` | Distributed streaming broker running in **KRaft** mode (no ZooKeeper dependency). |
 
 ---
-
-## 📥 How to Pull & Run Docker Images on AWS
+## How to Pull & Run Docker Images on AWS
 
 ### 1. Connect to your EC2 Instance via AWS SSM
 Because all EC2 instances are in private subnets with no public SSH access, connect using **AWS Systems Manager (SSM)**:
@@ -204,7 +203,7 @@ docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-
 
 ---
 
-## 🔄 Data Processing Layers & Pipelines
+##  Data Processing Layers & Pipelines
 
 ### 1. Spark Structured Streaming Ingestion (Kafka → S3 Bronze)
 * **File**: [`src/streaming/kafka_to_bronze.py`](src/streaming/kafka_to_bronze.py)
@@ -240,7 +239,7 @@ docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-
 
 ---
 
-## ⚙️ Environment Configuration (.env)
+## Environment Configuration (.env)
 
 | Environment Variable | Description | AWS Production Example | Local Dev Example |
 | :--- | :--- | :--- | :--- |
@@ -257,5 +256,5 @@ docker run --rm --env-file /opt/retailhub-batch/.env naveen9200/retailhub-spark-
 
 ---
 
-## 📄 License
+##  License
 This project is licensed under the Apache 2.0 License - see the LICENSE file for details.
