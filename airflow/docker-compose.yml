@@ -1,0 +1,44 @@
+services:
+
+  airflow-db:
+    image: postgres:16
+    container_name: retailhub-airflow-db
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  airflow:
+    image: apache/airflow:3.1.0
+    container_name: retailhub-airflow
+
+    group_add:
+       - "1001"
+
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ../data:/opt/retailhub/data
+      - ../.env:/opt/retailhub/.env:ro
+      - /var/run/docker.sock:/var/run/docker.sock 
+    ports:
+      - "8080:8080"
+    command: standalone
+
+volumes:
+  airflow-db-data:
