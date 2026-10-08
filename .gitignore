@@ -1,15 +1,17 @@
 .venv/
+.venv-linux
 __pycache__/
 *.pyc
 
 .env
-
+*.example.aws.yml
 data/
 checkpoints/
 logs/
 
 .pytest_cache/
-
+logs/
+plugins/
 
 *Notes
 
@@ -18,3 +20,11 @@ logs/
 __init__.py
 
 terraform/
+
+
+airflow/docker-compose.example.aws.yml
+airflow/dags/silve_dag_aws.py
+.env.example.aws
+airflow/dags/gold_dag_aws.py
+src/streaming/docker-compose.example..awsyml
+src/streaming/__init__.py
